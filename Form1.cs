@@ -42,7 +42,7 @@ namespace Roulette_Huang
                     cmbBetValue.Items.AddRange(Enumerable.Range(0, 37).Select(n => n.ToString()).ToArray());
                     break;
                 case BetType.Color:
-                    cmbBetValue.Items.AddRange(new string[] { "Red", "Black", "Green" });
+                    cmbBetValue.Items.AddRange(new string[] { "Red", "Black" });
                     break;
                 case BetType.Dozen:
                     cmbBetValue.Items.AddRange(new string[] { "1st", "2nd", "3rd" });
@@ -85,28 +85,59 @@ namespace Roulette_Huang
 
         private void CreateRouletteTable()
         {
-            int startX = 30;
+            int startX = 50;
             int startY = 280;
             int buttonSize = 40;
-            int numbersPerRow = 12;
+            int spacing = 5;
 
-            for (int i = 0; i <= 36; i++)
+            Button btnZero = new Button();
+            btnZero.Text = "0";
+            btnZero.Size = new Size(buttonSize, buttonSize * 3 + spacing * 2);
+            btnZero.BackColor = Color.Green;
+            btnZero.ForeColor = Color.White;
+            btnZero.Tag = 0;
+            btnZero.Location = new Point(startX, startY);
+            btnZero.Click += BetButton_Click;
+            this.Controls.Add(btnZero);
+
+            int[,] layout = new int[3, 12]
             {
-                Button btn = new Button();
-                btn.Text = i.ToString();
-                btn.Size = new Size(buttonSize, buttonSize);
-                btn.BackColor = GetRouletteColor(i);
-                btn.ForeColor = Color.White;
-                btn.Tag = i; 
-                btn.Click += BetButton_Click;
+        { 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36 },
+        { 2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35 },
+        { 1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34 }
+            };
 
-                int row = i / numbersPerRow;
-                int col = i % numbersPerRow;
-
-                btn.Location = new Point(startX + col * (buttonSize + 5), startY + row * (buttonSize + 5));
-                this.Controls.Add(btn);
+            for (int row = 0; row < 3; row++)
+            {
+                for (int col = 0; col < 12; col++)
+                {
+                    int number = layout[row, col];
+                    Button btn = new Button();
+                    btn.Text = number.ToString();
+                    btn.Size = new Size(buttonSize, buttonSize);
+                    btn.BackColor = GetRouletteColor(number);
+                    btn.ForeColor = Color.White;
+                    btn.Tag = number;
+                    btn.Location = new Point(startX + buttonSize + spacing + col * (buttonSize + spacing),
+                                             startY + row * (buttonSize + spacing));
+                    btn.Click += BetButton_Click;
+                    this.Controls.Add(btn);
+                }
             }
 
+            int labelY = startY + 3 * (buttonSize + spacing) + 10;
+            int labelX = startX + buttonSize + spacing;
+
+            string[] outsideBets = { "1st 12", "2nd 12", "3rd 12", "1 to 18", "19 to 36", "Even", "Odd", "Red", "Black" };
+            for (int i = 0; i < outsideBets.Length; i++)
+            {
+                Button betBtn = new Button();
+                betBtn.Text = outsideBets[i];
+                betBtn.Size = new Size(70, 30);
+                betBtn.Location = new Point(labelX + i * (75), labelY);
+                betBtn.Click += OutsideBet_Click;
+                this.Controls.Add(betBtn);
+            }
         }
 
         private Color GetRouletteColor(int number)
@@ -129,5 +160,46 @@ namespace Roulette_Huang
 
             btnPlaceBet.PerformClick(); 
         }
+        private void OutsideBet_Click(object sender, EventArgs e)
+        {
+            Button btn = sender as Button;
+            string betText = btn.Text;
+
+            BetType type;
+            string value;
+
+            if (betText.Contains("12"))
+            {
+                type = BetType.Dozen;
+                value = betText.Substring(0, 4);
+            }
+            else if (betText == "1 to 18" || betText == "19 to 36")
+            {
+                type = BetType.Range;
+                value = betText.Replace(" to ", "-");
+            }
+            else if (betText == "Odd" || betText == "Even")
+            {
+                type = BetType.OddEven;
+                value = betText;
+            }
+            else if (betText == "Red" || betText == "Black")
+            {
+                type = BetType.Color;
+                value = betText;
+            }
+            else
+            {
+                return; 
+            }
+
+            cmbBetType.SelectedItem = type;
+            UpdateBetValues(); 
+            cmbBetValue.SelectedItem = value;
+            txtBetAmount.Text = "10";  
+
+            btnPlaceBet.PerformClick();
+        }
+
     }
 }
